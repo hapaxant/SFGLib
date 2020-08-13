@@ -3,7 +3,25 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27703.2047
 MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SFGLib", "SFGLib\SFGLib.csproj", "{AC2FD353-94DF-4D85-BFD6-58DED5F12EDB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "example", "example\example.csproj", "{B4F57590-4D8B-4D03-BF3F-9ED7E24C6C4B}"
+EndProject
 Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{AC2FD353-94DF-4D85-BFD6-58DED5F12EDB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AC2FD353-94DF-4D85-BFD6-58DED5F12EDB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AC2FD353-94DF-4D85-BFD6-58DED5F12EDB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AC2FD353-94DF-4D85-BFD6-58DED5F12EDB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B4F57590-4D8B-4D03-BF3F-9ED7E24C6C4B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B4F57590-4D8B-4D03-BF3F-9ED7E24C6C4B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B4F57590-4D8B-4D03-BF3F-9ED7E24C6C4B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B4F57590-4D8B-4D03-BF3F-9ED7E24C6C4B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
