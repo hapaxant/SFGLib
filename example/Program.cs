@@ -14,11 +14,17 @@ namespace example
             var cli = new Client();
             var lobby = cli.LoadLobby();
             var con = cli.CreateWorldConnection("egg");
-            con.OnMessage += (s, m) =>
+            con.OnDisconnect += (s, e) => Console.WriteLine(e);
+            con.OnMessage += (s, e) =>
             {
-                if (m is FireBulletMessage f)
+                switch (e)
                 {
-                    Console.WriteLine(f.Angle);
+                    case FireBulletMessage m:
+                        Console.WriteLine(m.Angle);
+                        break;
+                    case InitMessage m:
+                        con.SendMovement(300, 400, true, true, true);
+                        break;
                 }
             };
             con.Connect();
