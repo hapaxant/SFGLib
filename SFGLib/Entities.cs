@@ -12,31 +12,50 @@ namespace SFGLib
 
     public enum MessageType
     {
-        Init, PlayerJoin, Movement, BlockSingle
+        Unknown, Init, PlayerJoin, PlayerLeave, Movement, PickupGun, EquipGun, FireBullet, BlockSingle,
     }
 
     public struct Point
     {
-        public Point(int x, int y) { X = x; Y = y; }
+        public Point(double x, double y) { X = x; Y = y; }
+
         [JsonProperty("x")]
-        public int X { get; }
+        public double X { get; }
         [JsonProperty("y")]
-        public int Y { get; }
+        public double Y { get; }
     }
     public struct Size
     {
-        public Size(int width, int height) { Width = width; Height = height; }
+        public Size(double width, double height) { Width = width; Height = height; }
+
         [JsonProperty("width")]
-        public int Width { get; }
+        public double Width { get; }
         [JsonProperty("height")]
-        public int Height { get; }
+        public double Height { get; }
+    }
+
+    public enum BlockId
+    {
+
     }
 
     public struct Block
     {
         public Block(int id) { Id = id; }
+
         [JsonProperty("id")]
         public int Id { get; }
     }
 
+    public struct Input
+    {
+        public Input(bool left, bool right, bool up) { Left = left; Right = right; Up = up; }
+
+        [JsonProperty("left")]
+        public bool Left { get; internal set; }
+        [JsonProperty("right")]
+        public bool Right { get; internal set; }
+        [JsonProperty("up")]
+        public bool Up { get; internal set; }
+    }
 }

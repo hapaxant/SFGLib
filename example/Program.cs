@@ -16,7 +16,10 @@ namespace example
             var con = cli.CreateWorldConnection("egg");
             con.OnMessage += (s, m) =>
             {
-
+                if (m is FireBulletMessage f)
+                {
+                    Console.WriteLine(f.Angle);
+                }
             };
             con.Connect();
             Console.Write("egg");

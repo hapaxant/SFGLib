@@ -25,6 +25,8 @@ namespace SFGLib
         public event EventHandler<BaseMessage> OnMessage;
         public event EventHandler<string> OnDisconnect;
 
+        public Dictionary<int, Player> Players = new Dictionary<int, Player>();
+
         public void Connect()
         {
             Socket.Connect();
@@ -35,4 +37,5 @@ namespace SFGLib
             Socket?.Close();
         }
     }
+    public class Player { public int UserId { get; } public object Tag { get; set; } }
 }
