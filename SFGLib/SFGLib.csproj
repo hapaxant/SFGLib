@@ -46,7 +46,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Class1.cs" />
+    <Compile Include="Client.cs" />
+    <Compile Include="Connection.cs" />
+    <Compile Include="Consts.cs" />
+    <Compile Include="Entities.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
