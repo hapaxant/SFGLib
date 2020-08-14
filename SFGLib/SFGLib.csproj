@@ -50,6 +50,7 @@
     <Compile Include="Connection.cs" />
     <Compile Include="Consts.cs" />
     <Compile Include="Entities.cs" />
+    <Compile Include="Messages.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

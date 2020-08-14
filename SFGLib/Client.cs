@@ -24,9 +24,6 @@ namespace SFGLib
                 return JsonConvert.DeserializeObject<LobbyWorld[]>(sr.ReadToEnd());
         }
 
-        public Connection JoinWorld(string id)
-        {
-            throw new NotImplementedException();
-        }
+        public Connection CreateWorldConnection(string id) => new Connection(this, id);
     }
 }

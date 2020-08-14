@@ -11,6 +11,16 @@ namespace example
     {
         static void Main(string[] args)
         {
+            var cli = new Client();
+            var lobby = cli.LoadLobby();
+            var con = cli.CreateWorldConnection("egg");
+            con.OnMessage += (s, m) =>
+            {
+
+            };
+            con.Connect();
+            Console.Write("egg");
+            Console.ReadLine();
         }
     }
 }
