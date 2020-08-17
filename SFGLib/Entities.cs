@@ -36,15 +36,22 @@ namespace SFGLib
 
     public enum BlockId
     {
-
+        Empty = 0, Solid = 1, Gun = 2
+    }
+    public enum LayerId
+    {
+        Foreground = 0, Action = 1, Background = 2
     }
 
     public struct Block
     {
-        public Block(int id) { Id = id; }
+        [JsonConstructor]
+        public Block(int id) { Id = id; UserId = 0; }
+        public Block(int id, int userId) { Id = id; UserId = userId; }
 
         [JsonProperty("id")]
         public int Id { get; }
+        public int UserId { get; internal set; }
     }
 
     public struct Input

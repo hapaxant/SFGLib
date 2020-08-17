@@ -5,7 +5,7 @@ using WebSocketSharp;
 
 namespace SFGLib
 {
-    internal static class MessageHandler
+    internal static class MessageParser
     {
         internal static MessageType PacketIdToEnum(string packetId)
         {
@@ -42,7 +42,7 @@ namespace SFGLib
             return m;
         }
 
-        internal static BaseMessage HandleMessage(MessageEventArgs m)
+        internal static BaseMessage ParseMessage(MessageEventArgs m)
         {
             var raw = m.Data;
             var json = JsonConvert.DeserializeObject<JObject>(raw);
@@ -154,6 +154,7 @@ namespace SFGLib
         public PlayerLeaveMessage() : base(MessageType.PlayerLeave) { }
 
         public int UserId { get; internal set; }
+        public Player Player { get; internal set; }
     }
     public sealed class MovementMessage : BaseMessage, IUserId
     {
@@ -201,6 +202,8 @@ namespace SFGLib
         public int UserId { get; internal set; }
         [JsonProperty("position")]
         public Point Position { get; internal set; }
+        public int X { get => (int)Position.X; }
+        public int Y { get => (int)Position.Y; }
         [JsonProperty("layer")]
         public int Layer { get; internal set; }
         [JsonProperty("id")]
