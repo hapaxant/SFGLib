@@ -47,7 +47,7 @@ namespace SFGLib
             var raw = m.Data;
             var json = JsonConvert.DeserializeObject<JObject>(raw);
             string packetId = json["packetId"].ToString();
-            
+
             BaseMessage msg;
             var msgtype = PacketIdToEnum(packetId);
             switch (msgtype)
@@ -113,7 +113,7 @@ namespace SFGLib
         }
     }
 
-    public interface IUserId {[JsonProperty("userId")] int UserId { get; } }
+    public interface IPlayerId {[JsonProperty("playerId")] int PlayerId { get; } }
 
     public abstract class BaseMessage
     {
@@ -124,24 +124,27 @@ namespace SFGLib
         public string Raw { get; internal set; }
     }
 
-    public sealed class InitMessage : BaseMessage, IUserId
+    public sealed class InitMessage : BaseMessage, IPlayerId
     {
         public InitMessage() : base(MessageType.Init) { }
 
-        [JsonProperty("sender")]
-        public int UserId { get; internal set; }
+        public int PlayerId { get; internal set; }
         [JsonProperty("spawnPosition")]
         public Point SpawnPosition { get; internal set; }
         [JsonProperty("size")]
         public Size WorldSize { get; internal set; }
         [JsonProperty("blocks")]
         public Block[,,] Blocks { get; internal set; }
+        [JsonProperty("username")]
+        public string Username { get; internal set; }
+        [JsonProperty("isGuest")]
+        public bool IsGuest { get; internal set; }
     }
-    public sealed class PlayerJoinMessage : BaseMessage, IUserId
+    public sealed class PlayerJoinMessage : BaseMessage, IPlayerId
     {
         public PlayerJoinMessage() : base(MessageType.PlayerJoin) { }
 
-        public int UserId { get; internal set; }
+        public int PlayerId { get; internal set; }
         [JsonProperty("joinLocation")]
         public Point JoinLocation { get; internal set; }
         [JsonProperty("hasGun")]
@@ -149,57 +152,52 @@ namespace SFGLib
         [JsonProperty("gunEquipped")]
         public bool GunEquipped { get; internal set; }
     }
-    public sealed class PlayerLeaveMessage : BaseMessage, IUserId
+    public sealed class PlayerLeaveMessage : BaseMessage, IPlayerId
     {
         public PlayerLeaveMessage() : base(MessageType.PlayerLeave) { }
 
-        public int UserId { get; internal set; }
+        public int PlayerId { get; internal set; }
         public Player Player { get; internal set; }
     }
-    public sealed class MovementMessage : BaseMessage, IUserId
+    public sealed class MovementMessage : BaseMessage, IPlayerId
     {
         public MovementMessage() : base(MessageType.Movement) { }
 
-        [JsonProperty("sender")]
-        public int UserId { get; internal set; }
+        public int PlayerId { get; internal set; }
         [JsonProperty("position")]
         public Point Position { get; internal set; }
         [JsonProperty("inputs")]
         public Input Inputs { get; internal set; }
     }
 
-    public sealed class PickupGunMessage : BaseMessage, IUserId
+    public sealed class PickupGunMessage : BaseMessage, IPlayerId
     {
         public PickupGunMessage() : base(MessageType.PickupGun) { }
 
-        [JsonProperty("sender")]
-        public int UserId { get; internal set; }
+        public int PlayerId { get; internal set; }
     }
-    public sealed class EquipGunMessage : BaseMessage, IUserId
+    public sealed class EquipGunMessage : BaseMessage, IPlayerId
     {
         public EquipGunMessage() : base(MessageType.EquipGun) { }
 
-        [JsonProperty("sender")]
-        public int UserId { get; internal set; }
+        public int PlayerId { get; internal set; }
         [JsonProperty("equipped")]
         public bool Equipped { get; internal set; }
     }
-    public sealed class FireBulletMessage : BaseMessage, IUserId
+    public sealed class FireBulletMessage : BaseMessage, IPlayerId
     {
         public FireBulletMessage() : base(MessageType.FireBullet) { }
 
-        [JsonProperty("sender")]
-        public int UserId { get; internal set; }
+        public int PlayerId { get; internal set; }
         [JsonProperty("angle")]
         public double Angle { get; internal set; }
     }
 
-    public sealed class BlockSingleMessage : BaseMessage, IUserId
+    public sealed class BlockSingleMessage : BaseMessage, IPlayerId
     {
         public BlockSingleMessage() : base(MessageType.BlockSingle) { }
 
-        [JsonProperty("sender")]
-        public int UserId { get; internal set; }
+        public int PlayerId { get; internal set; }
         [JsonProperty("position")]
         public Point Position { get; internal set; }
         public int X { get => (int)Position.X; }

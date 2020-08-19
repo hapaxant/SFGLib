@@ -1,13 +1,44 @@
 ﻿using Newtonsoft.Json;
+using System;
 
 namespace SFGLib
 {
-    public struct LobbyWorld
+    public struct PlayerInfo
     {
-        public LobbyWorld(string id, int playerCount) { this.Id = id; this.PlayerCount = playerCount; }
+        [JsonConstructor]
+        internal PlayerInfo(LobbyRoom[] rooms, string name, bool isGuest)
+        {
+            OwnedRooms = rooms;
+            Name = name;
+            IsGuest = isGuest;
+        }
+
+        public LobbyRoom[] OwnedRooms { get; }
+        public string Name { get; }
+        public bool IsGuest { get; }
+    }
+
+    public struct LobbyRoom
+    {
+        [JsonConstructor]
+        internal LobbyRoom(string id, int playerCount, string type, string name)
+        {
+            Id = id;
+            PlayerCount = playerCount;
+            this._type = type;
+            Name = name;
+        }
 
         public string Id { get; }
         public int PlayerCount { get; }
+        internal string _type { get; }
+        public RoomType Type { get => (RoomType)Enum.Parse(typeof(RoomType), _type, true); }
+        public string Name { get; }
+    }
+
+    public enum RoomType
+    {
+        Saved, Dynamic
     }
 
     public enum MessageType
@@ -64,5 +95,19 @@ namespace SFGLib
         public bool Right { get; internal set; }
         [JsonProperty("up")]
         public bool Up { get; internal set; }
+    }
+
+    public class Player : IPlayerId
+    {
+        public Player(int playerId) => PlayerId = playerId;
+
+        public int PlayerId { get; }
+        public Point Position { get; internal set; }
+        public double X { get => Position.X; }
+        public double Y { get => Position.Y; }
+        public Input Inputs { get; internal set; }
+        public bool GunEquipped { get; internal set; }
+        public bool HasGun { get; internal set; }
+        public object Tag { get; set; }
     }
 }

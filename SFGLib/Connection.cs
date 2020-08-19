@@ -11,19 +11,40 @@ using Newtonsoft.Json.Linq;
 
 namespace SFGLib
 {
-    public class Connection : IDisposable
+    public sealed class Connection : IDisposable
     {
-        internal Connection(Client cli, string id)
+        internal Connection() { }
+
+        internal static Connection CreateConnection<T>(Client cli, T args)
         {
-            Client = cli;
-            Socket = new WebSocket(Consts.GameUrl + id) { Compression = CompressionMethod.Deflate };
-            Socket.SslConfiguration.EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12;
-            Socket.OnMessage += (s, e) => { var m = MessageParser.ParseMessage(e); HandleMessage(m); OnMessage?.Invoke(this, m); };
-            Socket.OnClose += (s, e) => OnDisconnect?.Invoke(this, $"Reason: {e.Reason}, Code: {e.Code}, WasClean: {e.WasClean}");
+            var con = new Connection();
+            try
+            {
+                con.Client = cli;
+
+                string url;
+                using (var form = new System.Net.Http.FormUrlEncodedContent(new[]
+                {
+                    new KeyValuePair<string, string>("token", con.Client.token),
+                    new KeyValuePair<string, string>("world", JsonConvert.SerializeObject(args))
+                }))
+                    url = Consts.BaseGameUrl + form.ReadAsStringAsync().Result;
+
+                con.Socket = new WebSocket(url) { Compression = CompressionMethod.Deflate };
+                con.Socket.SslConfiguration.EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12;
+                con.Socket.OnMessage += (s, e) => { var m = MessageParser.ParseMessage(e); con.HandleMessage(m); con.OnMessage?.Invoke(con, m); };
+                con.Socket.OnClose += (s, e) => con.OnDisconnect?.Invoke(con, $"Reason: {e.Reason}, Code: {e.Code}, WasClean: {e.WasClean}");
+                return con;
+            }
+            catch
+            {
+                con?.Dispose();
+                throw;
+            }
         }
 
-        protected WebSocket Socket;
-        protected Client Client;
+        internal WebSocket Socket;
+        internal Client Client;
         public event EventHandler<BaseMessage> OnMessage;
         public event EventHandler<string> OnDisconnect;
         public bool Connected { get => Socket?.ReadyState == WebSocketState.Open; }
@@ -42,42 +63,43 @@ namespace SFGLib
                     {
                         WorldSize = m.WorldSize;
                         Blocks = m.Blocks;
-                        ClientId = m.UserId;
-                        _players.Add(m.UserId, new Player(m.UserId) { Position = m.SpawnPosition });
+                        ClientId = m.PlayerId;
+                        _players.Add(m.PlayerId, new Player(m.PlayerId) { Position = m.SpawnPosition });
                         break;
                     }
                 case PlayerJoinMessage m:
                     {
-                        _players.Add(m.UserId, new Player(m.UserId) { Position = m.JoinLocation, HasGun = m.HasGun, GunEquipped = m.GunEquipped });
+                        _players.Add(m.PlayerId, new Player(m.PlayerId) { Position = m.JoinLocation, HasGun = m.HasGun, GunEquipped = m.GunEquipped });
                         break;
                     }
                 case PlayerLeaveMessage m:
                     {
-                        m.Player = _players[m.UserId];
-                        _players.Remove(m.UserId);
+                        m.Player = _players[m.PlayerId];
+                        _players.Remove(m.PlayerId);
                         break;
                     }
                 case BlockSingleMessage m:
                     {
-                        Blocks[m.Layer, m.X, m.Y] = new Block(m.Id, m.UserId);
+                        Blocks[m.Layer, m.X, m.Y] = new Block(m.Id, m.PlayerId);
                         break;
                     }
                 case MovementMessage m:
                     {
-                        var p = _players[m.UserId];
+                        var p = _players[m.PlayerId];
                         p.Position = m.Position;
                         p.Inputs = m.Inputs;
                         break;
                     }
                 case PickupGunMessage m:
                     {
-                        var p = _players[m.UserId];
-                        p.HasGun = p.GunEquipped = true;
+                        var p = _players[m.PlayerId];
+                        //p.HasGun = p.GunEquipped = true;
+                        p.HasGun = true;
                         break;
                     }
                 case EquipGunMessage m:
                     {
-                        _players[m.UserId].GunEquipped = m.Equipped;
+                        _players[m.PlayerId].GunEquipped = m.Equipped;
                         break;
                     }
                 case FireBulletMessage m: break;
@@ -126,18 +148,5 @@ namespace SFGLib
         public void SendEquipGun(bool equipped) => Send(MessageType.EquipGun, new { equipped });
 
         public void SendFireBullet(double angle) => Send(MessageType.FireBullet, new { angle });
-    }
-    public class Player
-    {
-        public Player(int userId) => UserId = userId;
-
-        public int UserId { get; }
-        public Point Position { get; internal set; }
-        public double X { get => Position.X; }
-        public double Y { get => Position.Y; }
-        public Input Inputs { get; internal set; }
-        public bool GunEquipped { get; internal set; }
-        public bool HasGun { get; internal set; }
-        public object Tag { get; set; }
     }
 }
