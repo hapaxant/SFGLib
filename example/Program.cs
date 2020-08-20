@@ -16,10 +16,17 @@ namespace example
             var cli = Client.Login("test@piss.balls", "EGG");
             var lobby = cli.LoadLobby();
             var plr = cli.LoadPlayer();
-            //var con = cli.JoinRoom(plr.OwnedRooms[0]);
-            var con = cli.CreateDynamicRoom("WMWMWMWMWMWMWMWMWMWMWMWMWMWMWMWMWMWMWMWMWMWMWMWMWMWMWMWMWMWMWMWM", 50, 7);
+            Connection con;
+            if (lobby.Length > 0) con = cli.JoinRoom(lobby[0]);
+            else con = cli.CreateDynamicRoom("WMWMWMWMWMWMWMWMWMWMWMWMWMWMWMWMWMWMWMWMWMWMWMWMWMWMWMWMWMWMWMWM", 50, 50);
             con.OnDisconnect += (s, e) => Console.WriteLine(e);
             HashSet<int> optedIn = new HashSet<int>();
+            bool check(int pid, int id, int l)
+            {
+                if (optedIn.Contains(pid))
+                    if (id == (int)BlockId.Solid && l == (int)LayerId.Foreground) return true;
+                return false;
+            }
             con.OnMessage += (s, e) =>
             {
                 if (e.Type != MessageType.Movement) Console.WriteLine(e.Type);
@@ -36,12 +43,16 @@ namespace example
                         break;
                     case BlockSingleMessage m:
                         Console.WriteLine($"{m.Layer},{m.X},{m.Y},{m.Id}");
-                        if (optedIn.Contains(m.PlayerId))
-                            if (m.Id == (int)BlockId.Solid && m.Layer == (int)LayerId.Foreground)
-                                Task.Delay(200).ContinueWith((_) => con.SendBlock(m.Layer, m.Position, BlockId.Empty));
+                        if (check(m.PlayerId, m.Id, m.Layer)) Task.Delay(200).ContinueWith((_) => con.SendBlock(m.Layer, m.Position, BlockId.Empty));
+                        break;
+                    case BlockLineMessage m:
+                        if (check(m.PlayerId, m.Id, m.Layer)) Utils.BresenhamsLine(m, (x, y) => Task.Delay(200).ContinueWith((_) => con.SendBlockLine(m.Layer, m.Start, m.End, BlockId.Empty)));
                         break;
                     case PlayerJoinMessage m:
                         Console.WriteLine($"join #{m.PlayerId}");
+                        break;
+                    case PlayerLeaveMessage m:
+                        Console.WriteLine($"leave #{m.PlayerId}");
                         break;
                 }
             };
@@ -51,7 +62,8 @@ namespace example
             Random rnd = new Random();
             while (con.Connected)
             {
-                Console.ReadLine();
+                Thread.Sleep(200);
+                con.SendBlockLine(LayerId.Foreground, rnd.Next(-50, 100), rnd.Next(-50, 100), rnd.Next(-50, 100), rnd.Next(-50, 100), BlockId.Solid);
             }
         }
     }

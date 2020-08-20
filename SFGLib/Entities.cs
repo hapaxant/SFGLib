@@ -43,7 +43,7 @@ namespace SFGLib
 
     public enum MessageType
     {
-        Unknown, Init, PlayerJoin, PlayerLeave, Movement, PickupGun, EquipGun, FireBullet, BlockSingle,
+        Unknown, Init, PlayerJoin, PlayerLeave, Movement, PickupGun, EquipGun, FireBullet, BlockSingle, BlockLine
     }
 
     public struct Point
@@ -102,12 +102,15 @@ namespace SFGLib
         public Player(int playerId) => PlayerId = playerId;
 
         public int PlayerId { get; }
+        public string Username { get; internal set; }
+        public bool IsGuest { get; internal set; }
         public Point Position { get; internal set; }
         public double X { get => Position.X; }
         public double Y { get => Position.Y; }
         public Input Inputs { get; internal set; }
         public bool GunEquipped { get; internal set; }
         public bool HasGun { get; internal set; }
+        public double GunAngle { get; internal set; }
         public object Tag { get; set; }
     }
 }

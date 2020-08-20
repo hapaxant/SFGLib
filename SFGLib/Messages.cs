@@ -16,6 +16,7 @@ namespace SFGLib
                 case "SERVER_PLAYER_LEAVE": return MessageType.PlayerLeave;
                 case "SERVER_MOVEMENT": return MessageType.Movement;
                 case "SERVER_BLOCK_SINGLE": return MessageType.BlockSingle;
+                case "SERVER_BLOCK_LINE": return MessageType.BlockLine;
                 case "SERVER_FIRE_BULLET": return MessageType.FireBullet;
                 case "SERVER_PICKUP_GUN": return MessageType.PickupGun;
                 case "SERVER_EQUIP_GUN": return MessageType.EquipGun;
@@ -28,6 +29,7 @@ namespace SFGLib
             {
                 case MessageType.Movement: return "MOVEMENT";
                 case MessageType.BlockSingle: return "BLOCK_SINGLE";
+                case MessageType.BlockLine: return "BLOCK_LINE";
                 case MessageType.PickupGun: return "PICKUP_GUN";
                 case MessageType.EquipGun: return "EQUIP_GUN";
                 case MessageType.FireBullet: return "FIRE_BULLET";
@@ -59,41 +61,14 @@ namespace SFGLib
                         msg = init;
                         break;
                     }
-                case MessageType.PlayerJoin:
-                    {
-                        msg = CreateMessage<PlayerJoinMessage>(raw);
-                        break;
-                    }
-                case MessageType.PlayerLeave:
-                    {
-                        msg = CreateMessage<PlayerLeaveMessage>(raw);
-                        break;
-                    }
-                case MessageType.Movement:
-                    {
-                        msg = CreateMessage<MovementMessage>(raw);
-                        break;
-                    }
-                case MessageType.BlockSingle:
-                    {
-                        msg = CreateMessage<BlockSingleMessage>(raw);
-                        break;
-                    }
-                case MessageType.FireBullet:
-                    {
-                        msg = CreateMessage<FireBulletMessage>(raw);
-                        break;
-                    }
-                case MessageType.PickupGun:
-                    {
-                        msg = CreateMessage<PickupGunMessage>(raw);
-                        break;
-                    }
-                case MessageType.EquipGun:
-                    {
-                        msg = CreateMessage<EquipGunMessage>(raw);
-                        break;
-                    }
+                case MessageType.PlayerJoin: msg = CreateMessage<PlayerJoinMessage>(raw); break;
+                case MessageType.PlayerLeave: msg = CreateMessage<PlayerLeaveMessage>(raw); break;
+                case MessageType.Movement: msg = CreateMessage<MovementMessage>(raw); break;
+                case MessageType.BlockSingle: msg = CreateMessage<BlockSingleMessage>(raw); break;
+                case MessageType.BlockLine: msg = CreateMessage<BlockLineMessage>(raw); break;
+                case MessageType.FireBullet: msg = CreateMessage<FireBulletMessage>(raw); break;
+                case MessageType.PickupGun: msg = CreateMessage<PickupGunMessage>(raw); break;
+                case MessageType.EquipGun: msg = CreateMessage<EquipGunMessage>(raw); break;
                 default: throw new NotImplementedException();
             }
             return msg;
@@ -114,6 +89,7 @@ namespace SFGLib
     }
 
     public interface IPlayerId {[JsonProperty("playerId")] int PlayerId { get; } }
+    public interface IPositioned {[JsonProperty("position")] Point Position { get; } }
 
     public abstract class BaseMessage
     {
@@ -124,13 +100,14 @@ namespace SFGLib
         public string Raw { get; internal set; }
     }
 
-    public sealed class InitMessage : BaseMessage, IPlayerId
+    public sealed class InitMessage : BaseMessage, IPlayerId, IPositioned
     {
         public InitMessage() : base(MessageType.Init) { }
 
         public int PlayerId { get; internal set; }
         [JsonProperty("spawnPosition")]
         public Point SpawnPosition { get; internal set; }
+        Point IPositioned.Position { get => SpawnPosition; }
         [JsonProperty("size")]
         public Size WorldSize { get; internal set; }
         [JsonProperty("blocks")]
@@ -140,17 +117,22 @@ namespace SFGLib
         [JsonProperty("isGuest")]
         public bool IsGuest { get; internal set; }
     }
-    public sealed class PlayerJoinMessage : BaseMessage, IPlayerId
+    public sealed class PlayerJoinMessage : BaseMessage, IPlayerId, IPositioned
     {
         public PlayerJoinMessage() : base(MessageType.PlayerJoin) { }
 
         public int PlayerId { get; internal set; }
         [JsonProperty("joinLocation")]
         public Point JoinLocation { get; internal set; }
+        Point IPositioned.Position { get => JoinLocation; }
         [JsonProperty("hasGun")]
         public bool HasGun { get; internal set; }
         [JsonProperty("gunEquipped")]
         public bool GunEquipped { get; internal set; }
+        [JsonProperty("username")]
+        public string Username { get; internal set; }
+        [JsonProperty("isGuest")]
+        public bool IsGuest { get; internal set; }
     }
     public sealed class PlayerLeaveMessage : BaseMessage, IPlayerId
     {
@@ -159,12 +141,11 @@ namespace SFGLib
         public int PlayerId { get; internal set; }
         public Player Player { get; internal set; }
     }
-    public sealed class MovementMessage : BaseMessage, IPlayerId
+    public sealed class MovementMessage : BaseMessage, IPlayerId, IPositioned
     {
         public MovementMessage() : base(MessageType.Movement) { }
 
         public int PlayerId { get; internal set; }
-        [JsonProperty("position")]
         public Point Position { get; internal set; }
         [JsonProperty("inputs")]
         public Input Inputs { get; internal set; }
@@ -193,15 +174,28 @@ namespace SFGLib
         public double Angle { get; internal set; }
     }
 
-    public sealed class BlockSingleMessage : BaseMessage, IPlayerId
+    public sealed class BlockSingleMessage : BaseMessage, IPlayerId,IPositioned
     {
         public BlockSingleMessage() : base(MessageType.BlockSingle) { }
 
         public int PlayerId { get; internal set; }
-        [JsonProperty("position")]
         public Point Position { get; internal set; }
         public int X { get => (int)Position.X; }
         public int Y { get => (int)Position.Y; }
+        [JsonProperty("layer")]
+        public int Layer { get; internal set; }
+        [JsonProperty("id")]
+        public int Id { get; internal set; }
+    }
+    public sealed class BlockLineMessage : BaseMessage, IPlayerId
+    {
+        public BlockLineMessage() : base(MessageType.BlockLine) { }
+
+        public int PlayerId { get; internal set; }
+        [JsonProperty("start")]
+        public Point Start { get; internal set; }
+        [JsonProperty("end")]
+        public Point End { get; internal set; }
         [JsonProperty("layer")]
         public int Layer { get; internal set; }
         [JsonProperty("id")]

@@ -64,12 +64,12 @@ namespace SFGLib
                         WorldSize = m.WorldSize;
                         Blocks = m.Blocks;
                         ClientId = m.PlayerId;
-                        _players.Add(m.PlayerId, new Player(m.PlayerId) { Position = m.SpawnPosition });
+                        _players.Add(m.PlayerId, new Player(m.PlayerId) { Username = m.Username, IsGuest = m.IsGuest, Position = m.SpawnPosition });
                         break;
                     }
                 case PlayerJoinMessage m:
                     {
-                        _players.Add(m.PlayerId, new Player(m.PlayerId) { Position = m.JoinLocation, HasGun = m.HasGun, GunEquipped = m.GunEquipped });
+                        _players.Add(m.PlayerId, new Player(m.PlayerId) { Username = m.Username, IsGuest = m.IsGuest, Position = m.JoinLocation, HasGun = m.HasGun, GunEquipped = m.GunEquipped });
                         break;
                     }
                 case PlayerLeaveMessage m:
@@ -81,6 +81,15 @@ namespace SFGLib
                 case BlockSingleMessage m:
                     {
                         Blocks[m.Layer, m.X, m.Y] = new Block(m.Id, m.PlayerId);
+                        break;
+                    }
+                case BlockLineMessage m:
+                    {
+                        Utils.BresenhamsLine(m, (x, y) =>
+                        {
+                            if (x >= 0 && x < WorldSize.Width &&
+                                y >= 3 && y < WorldSize.Height) Blocks[m.Layer, x, y] = new Block(m.Id, m.PlayerId);
+                        });
                         break;
                     }
                 case MovementMessage m:
@@ -102,7 +111,7 @@ namespace SFGLib
                         _players[m.PlayerId].GunEquipped = m.Equipped;
                         break;
                     }
-                case FireBulletMessage m: break;
+                case FireBulletMessage m: _players[m.PlayerId].GunAngle = m.Angle; break;
                 default:
                     Console.WriteLine($"unhandled {e.Type}!");
                     break;
@@ -148,5 +157,23 @@ namespace SFGLib
         public void SendEquipGun(bool equipped) => Send(MessageType.EquipGun, new { equipped });
 
         public void SendFireBullet(double angle) => Send(MessageType.FireBullet, new { angle });
+
+        public void SendBlockLine(int layer, int x1, int y1, int x2, int y2, int id) => SendBlockLine(layer, new Point(x1, y1), new Point(x2, y2), id);
+        public void SendBlockLine(LayerId layer, int x1, int y1, int x2, int y2, int id) => SendBlockLine((int)layer, new Point(x1, y1), new Point(x2, y2), id);
+        public void SendBlockLine(int layer, Point start, int x2, int y2, int id) => SendBlockLine(layer, start, new Point(x2, y2), id);
+        public void SendBlockLine(LayerId layer, Point start, int x2, int y2, int id) => SendBlockLine((int)layer, start, new Point(x2, y2), id);
+        public void SendBlockLine(int layer, int x1, int y1, Point end, int id) => SendBlockLine(layer, new Point(x1, y1), end, id);
+        public void SendBlockLine(LayerId layer, int x1, int y1, Point end, int id) => SendBlockLine((int)layer, new Point(x1, y1), end, id);
+        public void SendBlockLine(int layer, Point start, Point end, int id) => Send(MessageType.BlockLine, new { layer, start, end, id });
+        public void SendBlockLine(LayerId layer, Point start, Point end, int id) => SendBlockLine((int)layer, start, end, id);
+        public void SendBlockLine(int layer, int x1, int y1, int x2, int y2, BlockId id) => SendBlockLine(layer, new Point(x1, y1), new Point(x2, y2), (int)id);
+        public void SendBlockLine(LayerId layer, int x1, int y1, int x2, int y2, BlockId id) => SendBlockLine((int)layer, new Point(x1, y1), new Point(x2, y2), (int)id);
+        public void SendBlockLine(int layer, Point start, int x2, int y2, BlockId id) => SendBlockLine(layer, start, new Point(x2, y2), (int)id);
+        public void SendBlockLine(LayerId layer, Point start, int x2, int y2, BlockId id) => SendBlockLine((int)layer, start, new Point(x2, y2), (int)id);
+        public void SendBlockLine(int layer, int x1, int y1, Point end, BlockId id) => SendBlockLine(layer, new Point(x1, y1), end, (int)id);
+        public void SendBlockLine(LayerId layer, int x1, int y1, Point end, BlockId id) => SendBlockLine((int)layer, new Point(x1, y1), end, (int)id);
+        public void SendBlockLine(int layer, Point start, Point end, BlockId id) => SendBlockLine(layer, start, end, (int)id);
+        public void SendBlockLine(LayerId layer, Point start, Point end, BlockId id) => SendBlockLine((int)layer, start, end, (int)id);
+
     }
 }
