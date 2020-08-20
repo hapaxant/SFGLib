@@ -52,25 +52,7 @@ namespace SFGLib
 
         public LobbyRoom[] LoadLobby() => JsonConvert.DeserializeObject<LobbyRoom[]>(GetServerResponse(Consts.LobbyUrl, token: token));
 
-        public PlayerInfo LoadPlayer()
-        {//hacky code, this is temp anyway
-            var r = GetServerResponse(Consts.PlayerUrl, token: token);
-            var o = (dynamic)JsonConvert.DeserializeObject(r);
-            bool isguest = false;
-            string name = null;
-            LobbyRoom[] rooms = null;
-            try
-            {
-                isguest = o.isGuest;
-                name = o.name;
-            }
-            catch (Microsoft.CSharp.RuntimeBinder.RuntimeBinderException)
-            {
-                rooms = JsonConvert.DeserializeObject<LobbyRoom[]>(r);
-            }
-
-            return new PlayerInfo(rooms ?? new LobbyRoom[0], name, isguest);
-        }
+        public PlayerInfo LoadPlayer() => JsonConvert.DeserializeObject<PlayerInfo>(GetServerResponse(Consts.PlayerUrl, token: token));
 
         public Connection JoinRoom(LobbyRoom room) => JoinRoom(room.Id, room.Type);
         public Connection JoinRoom(string id, RoomType type) => Connection.CreateConnection(this, new { id, type = type.ToString().ToLowerInvariant() });

@@ -6,16 +6,26 @@ namespace SFGLib
     public struct PlayerInfo
     {
         [JsonConstructor]
-        internal PlayerInfo(LobbyRoom[] rooms, string name, bool isGuest)
+        internal PlayerInfo(LobbyRoom[] ownedWorlds, string name, bool isGuest, int energy, int maxEnergy, int energyRegenerationRateMs, int lastEnergyAmount, ulong timeEnergyWasAtAmount)
         {
-            OwnedRooms = rooms;
+            OwnedWorlds = ownedWorlds?? new LobbyRoom[0];
             Name = name;
             IsGuest = isGuest;
+            Energy = energy;
+            MaxEnergy = maxEnergy;
+            EnergyRegenerationRate = energyRegenerationRateMs;
+            LastEnergyAmount = lastEnergyAmount;
+            TimeEnergyWasAtAmount = timeEnergyWasAtAmount;
         }
 
-        public LobbyRoom[] OwnedRooms { get; }
         public string Name { get; }
         public bool IsGuest { get; }
+        public int Energy { get; }
+        public int MaxEnergy { get; }
+        public int EnergyRegenerationRate { get; }
+        public int LastEnergyAmount { get; }
+        public ulong TimeEnergyWasAtAmount { get; }
+        public LobbyRoom[] OwnedWorlds { get; }
     }
 
     public struct LobbyRoom
@@ -43,7 +53,7 @@ namespace SFGLib
 
     public enum MessageType
     {
-        Unknown, Init, PlayerJoin, PlayerLeave, Movement, PickupGun, EquipGun, FireBullet, BlockSingle, BlockLine
+        Unknown, Init, PlayerJoin, PlayerLeave, Movement, PickupGun, EquipGun, FireBullet, BlockSingle, BlockLine, BlockBuffer
     }
 
     public struct Point

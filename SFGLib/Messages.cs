@@ -17,6 +17,7 @@ namespace SFGLib
                 case "SERVER_MOVEMENT": return MessageType.Movement;
                 case "SERVER_BLOCK_SINGLE": return MessageType.BlockSingle;
                 case "SERVER_BLOCK_LINE": return MessageType.BlockLine;
+                case "SERVER_BLOCK_BUFFER": return MessageType.BlockBuffer;
                 case "SERVER_FIRE_BULLET": return MessageType.FireBullet;
                 case "SERVER_PICKUP_GUN": return MessageType.PickupGun;
                 case "SERVER_EQUIP_GUN": return MessageType.EquipGun;
@@ -30,6 +31,7 @@ namespace SFGLib
                 case MessageType.Movement: return "MOVEMENT";
                 case MessageType.BlockSingle: return "BLOCK_SINGLE";
                 case MessageType.BlockLine: return "BLOCK_LINE";
+                case MessageType.BlockBuffer: return "BLOCK_BUFFER";
                 case MessageType.PickupGun: return "PICKUP_GUN";
                 case MessageType.EquipGun: return "EQUIP_GUN";
                 case MessageType.FireBullet: return "FIRE_BULLET";
@@ -69,7 +71,7 @@ namespace SFGLib
                 case MessageType.FireBullet: msg = CreateMessage<FireBulletMessage>(raw); break;
                 case MessageType.PickupGun: msg = CreateMessage<PickupGunMessage>(raw); break;
                 case MessageType.EquipGun: msg = CreateMessage<EquipGunMessage>(raw); break;
-                default: throw new NotImplementedException();
+                default: msg = new BaseMessage() { Raw = raw }; break;
             }
             return msg;
         }
@@ -91,18 +93,19 @@ namespace SFGLib
     public interface IPlayerId {[JsonProperty("playerId")] int PlayerId { get; } }
     public interface IPositioned {[JsonProperty("position")] Point Position { get; } }
 
-    public abstract class BaseMessage
+    public class BaseMessage
     {
         internal BaseMessage() { }
-        internal BaseMessage(MessageType type) { Type = type; }
 
-        public MessageType Type { get; internal set; }
+        public virtual MessageType Type { get; }
+        internal string packetId => MessageParser.EnumToPacketId(Type);
         public string Raw { get; internal set; }
     }
 
     public sealed class InitMessage : BaseMessage, IPlayerId, IPositioned
     {
-        public InitMessage() : base(MessageType.Init) { }
+        public InitMessage() { }
+        public override MessageType Type => MessageType.Init;
 
         public int PlayerId { get; internal set; }
         [JsonProperty("spawnPosition")]
@@ -116,10 +119,13 @@ namespace SFGLib
         public string Username { get; internal set; }
         [JsonProperty("isGuest")]
         public bool IsGuest { get; internal set; }
+        [JsonProperty("worldId")]
+        public string WorldId { get; internal set; }
     }
     public sealed class PlayerJoinMessage : BaseMessage, IPlayerId, IPositioned
     {
-        public PlayerJoinMessage() : base(MessageType.PlayerJoin) { }
+        public PlayerJoinMessage() { }
+        public override MessageType Type => MessageType.PlayerJoin;
 
         public int PlayerId { get; internal set; }
         [JsonProperty("joinLocation")]
@@ -136,14 +142,25 @@ namespace SFGLib
     }
     public sealed class PlayerLeaveMessage : BaseMessage, IPlayerId
     {
-        public PlayerLeaveMessage() : base(MessageType.PlayerLeave) { }
+        public PlayerLeaveMessage() { }
+        public override MessageType Type => MessageType.PlayerLeave;
 
         public int PlayerId { get; internal set; }
         public Player Player { get; internal set; }
     }
     public sealed class MovementMessage : BaseMessage, IPlayerId, IPositioned
     {
-        public MovementMessage() : base(MessageType.Movement) { }
+        public MovementMessage() { }
+        public MovementMessage(double x, double y, bool left = false, bool right = false, bool up = false) : this(new Point(x, y), new Input(left, right, up)) { }
+        public MovementMessage(Point position, bool left = false, bool right = false, bool up = false) : this(position, new Input(left, right, up)) { }
+        public MovementMessage(double x, double y, Input inputs = default) : this(new Point(x, y), inputs) { }
+        public MovementMessage(Point position, Input inputs = default) : this()
+        {
+            Position = position;
+            Inputs = inputs;
+            Raw = JsonConvert.SerializeObject(new { packetId, position, inputs });
+        }
+        public override MessageType Type => MessageType.Movement;
 
         public int PlayerId { get; internal set; }
         public Point Position { get; internal set; }
@@ -153,13 +170,27 @@ namespace SFGLib
 
     public sealed class PickupGunMessage : BaseMessage, IPlayerId
     {
-        public PickupGunMessage() : base(MessageType.PickupGun) { }
+        public PickupGunMessage() { }
+        public PickupGunMessage(int x, int y) : this(new Point(x, y)) { }
+        public PickupGunMessage(Point position) : this()
+        {
+            this.position = position;
+            Raw = JsonConvert.SerializeObject(new { packetId, position });
+        }
+        public override MessageType Type => MessageType.PickupGun;
 
+        internal Point position { get; set; }
         public int PlayerId { get; internal set; }
     }
     public sealed class EquipGunMessage : BaseMessage, IPlayerId
     {
-        public EquipGunMessage() : base(MessageType.EquipGun) { }
+        public EquipGunMessage() { }
+        public EquipGunMessage(bool equipped) : this()
+        {
+            Equipped = equipped;
+            Raw = JsonConvert.SerializeObject(new { packetId, equipped });
+        }
+        public override MessageType Type => MessageType.EquipGun;
 
         public int PlayerId { get; internal set; }
         [JsonProperty("equipped")]
@@ -167,16 +198,37 @@ namespace SFGLib
     }
     public sealed class FireBulletMessage : BaseMessage, IPlayerId
     {
-        public FireBulletMessage() : base(MessageType.FireBullet) { }
+        public FireBulletMessage() { }
+        public FireBulletMessage(double angle) : this()
+        {
+            Angle = angle;
+            Raw = JsonConvert.SerializeObject(new { packetId, angle });
+        }
+        public override MessageType Type => MessageType.FireBullet;
 
         public int PlayerId { get; internal set; }
         [JsonProperty("angle")]
         public double Angle { get; internal set; }
     }
 
-    public sealed class BlockSingleMessage : BaseMessage, IPlayerId,IPositioned
+    public sealed class BlockSingleMessage : BaseMessage, IPlayerId, IPositioned
     {
-        public BlockSingleMessage() : base(MessageType.BlockSingle) { }
+        public BlockSingleMessage() { }
+        public BlockSingleMessage(int layer, int x, int y, int id) : this(layer, new Point(x, y), id) { }
+        public BlockSingleMessage(LayerId layer, int x, int y, int id) : this((int)layer, new Point(x, y), id) { }
+        public BlockSingleMessage(int layer, Point position, int id) : this()
+        {
+            Layer = layer;
+            Position = position;
+            Id = id;
+            Raw = JsonConvert.SerializeObject(new { packetId, layer, position, id });
+        }
+        public BlockSingleMessage(LayerId layer, Point position, int id) : this((int)layer, position, id) { }
+        public BlockSingleMessage(int layer, int x, int y, BlockId id) : this(layer, new Point(x, y), (int)id) { }
+        public BlockSingleMessage(LayerId layer, int x, int y, BlockId id) : this((int)layer, new Point(x, y), (int)id) { }
+        public BlockSingleMessage(int layer, Point position, BlockId id) : this(layer, position, (int)id) { }
+        public BlockSingleMessage(LayerId layer, Point position, BlockId id) : this((int)layer, position, (int)id) { }
+        public override MessageType Type => MessageType.BlockSingle;
 
         public int PlayerId { get; internal set; }
         public Point Position { get; internal set; }
@@ -189,7 +241,31 @@ namespace SFGLib
     }
     public sealed class BlockLineMessage : BaseMessage, IPlayerId
     {
-        public BlockLineMessage() : base(MessageType.BlockLine) { }
+        public BlockLineMessage() { }
+        public BlockLineMessage(int layer, int x1, int y1, int x2, int y2, int id) : this(layer, new Point(x1, y1), new Point(x2, y2), id) { }
+        public BlockLineMessage(LayerId layer, int x1, int y1, int x2, int y2, int id) : this((int)layer, new Point(x1, y1), new Point(x2, y2), id) { }
+        public BlockLineMessage(int layer, Point start, int x2, int y2, int id) : this(layer, start, new Point(x2, y2), id) { }
+        public BlockLineMessage(LayerId layer, Point start, int x2, int y2, int id) : this((int)layer, start, new Point(x2, y2), id) { }
+        public BlockLineMessage(int layer, int x1, int y1, Point end, int id) : this(layer, new Point(x1, y1), end, id) { }
+        public BlockLineMessage(LayerId layer, int x1, int y1, Point end, int id) : this((int)layer, new Point(x1, y1), end, id) { }
+        public BlockLineMessage(int layer, Point start, Point end, int id) : this()
+        {
+            Layer = layer;
+            Start = start;
+            End = end;
+            Id = id;
+            Raw = JsonConvert.SerializeObject(new { packetId, layer, start, end, id });
+        }
+        public BlockLineMessage(LayerId layer, Point start, Point end, int id) : this((int)layer, start, end, id) { }
+        public BlockLineMessage(int layer, int x1, int y1, int x2, int y2, BlockId id) : this(layer, new Point(x1, y1), new Point(x2, y2), (int)id) { }
+        public BlockLineMessage(LayerId layer, int x1, int y1, int x2, int y2, BlockId id) : this((int)layer, new Point(x1, y1), new Point(x2, y2), (int)id) { }
+        public BlockLineMessage(int layer, Point start, int x2, int y2, BlockId id) : this(layer, start, new Point(x2, y2), (int)id) { }
+        public BlockLineMessage(LayerId layer, Point start, int x2, int y2, BlockId id) : this((int)layer, start, new Point(x2, y2), (int)id) { }
+        public BlockLineMessage(int layer, int x1, int y1, Point end, BlockId id) : this(layer, new Point(x1, y1), end, (int)id) { }
+        public BlockLineMessage(LayerId layer, int x1, int y1, Point end, BlockId id) : this((int)layer, new Point(x1, y1), end, (int)id) { }
+        public BlockLineMessage(int layer, Point start, Point end, BlockId id) : this(layer, start, end, (int)id) { }
+        public BlockLineMessage(LayerId layer, Point start, Point end, BlockId id) : this((int)layer, start, end, (int)id) { }
+        public override MessageType Type => MessageType.BlockLine;
 
         public int PlayerId { get; internal set; }
         [JsonProperty("start")]
@@ -201,4 +277,5 @@ namespace SFGLib
         [JsonProperty("id")]
         public int Id { get; internal set; }
     }
+
 }

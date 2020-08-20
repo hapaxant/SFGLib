@@ -50,6 +50,7 @@ namespace SFGLib
         public bool Connected { get => Socket?.ReadyState == WebSocketState.Open; }
 
         public int ClientId { get; internal set; }
+        public string WorldId { get; internal set; }
         public Size WorldSize { get; internal set; }
         public Block[,,] Blocks { get; internal set; }
         internal Dictionary<int, Player> _players = new Dictionary<int, Player>();
@@ -64,6 +65,7 @@ namespace SFGLib
                         WorldSize = m.WorldSize;
                         Blocks = m.Blocks;
                         ClientId = m.PlayerId;
+                        WorldId = m.WorldId;
                         _players.Add(m.PlayerId, new Player(m.PlayerId) { Username = m.Username, IsGuest = m.IsGuest, Position = m.SpawnPosition });
                         break;
                     }
@@ -102,8 +104,7 @@ namespace SFGLib
                 case PickupGunMessage m:
                     {
                         var p = _players[m.PlayerId];
-                        //p.HasGun = p.GunEquipped = true;
-                        p.HasGun = true;
+                        p.HasGun = p.GunEquipped = true;
                         break;
                     }
                 case EquipGunMessage m:
@@ -136,12 +137,25 @@ namespace SFGLib
             json.Add("packetId", packetId);
             SendRaw(json.ToString());
         }
+        public void Send(BaseMessage msg) => SendRaw(msg.Raw);
 
+        public void SendMovement(MovementMessage msg) => SendMovement(msg.Position, msg.Inputs);
         public void SendMovement(double x, double y, bool left = false, bool right = false, bool up = false) => SendMovement(new Point(x, y), new Input(left, right, up));
         public void SendMovement(Point position, bool left = false, bool right = false, bool up = false) => SendMovement(position, new Input(left, right, up));
         public void SendMovement(double x, double y, Input inputs = default) => SendMovement(new Point(x, y), inputs);
         public void SendMovement(Point position, Input inputs = default) => Send(MessageType.Movement, new { position, inputs });
 
+        public void SendPickupGun(PickupGunMessage msg) => SendPickupGun(msg.position);
+        public void SendPickupGun(int x, int y) => SendPickupGun(new Point(x, y));
+        public void SendPickupGun(Point position) => Send(MessageType.PickupGun, new { position });
+
+        public void SendEquipGun(EquipGunMessage msg) => SendEquipGun(msg.Equipped);
+        public void SendEquipGun(bool equipped) => Send(MessageType.EquipGun, new { equipped });
+
+        public void SendFireBullet(FireBulletMessage msg) => SendFireBullet(msg.Angle);
+        public void SendFireBullet(double angle) => Send(MessageType.FireBullet, new { angle });
+
+        public void SendBlock(BlockSingleMessage msg) => SendBlock(msg.Layer, msg.Position, msg.Id);
         public void SendBlock(int layer, int x, int y, int id) => SendBlock(layer, new Point(x, y), id);
         public void SendBlock(LayerId layer, int x, int y, int id) => SendBlock((int)layer, new Point(x, y), id);
         public void SendBlock(int layer, Point position, int id) => Send(MessageType.BlockSingle, new { layer, position, id });
@@ -151,13 +165,7 @@ namespace SFGLib
         public void SendBlock(int layer, Point position, BlockId id) => SendBlock(layer, position, (int)id);
         public void SendBlock(LayerId layer, Point position, BlockId id) => SendBlock((int)layer, position, (int)id);
 
-        public void SendPickupGun(int x, int y) => SendPickupGun(new Point(x, y));
-        public void SendPickupGun(Point position) => Send(MessageType.PickupGun, new { position });
-
-        public void SendEquipGun(bool equipped) => Send(MessageType.EquipGun, new { equipped });
-
-        public void SendFireBullet(double angle) => Send(MessageType.FireBullet, new { angle });
-
+        public void SendBlockLine(BlockLineMessage msg) => SendBlockLine(msg.Layer, msg.Start, msg.End, msg.Id);
         public void SendBlockLine(int layer, int x1, int y1, int x2, int y2, int id) => SendBlockLine(layer, new Point(x1, y1), new Point(x2, y2), id);
         public void SendBlockLine(LayerId layer, int x1, int y1, int x2, int y2, int id) => SendBlockLine((int)layer, new Point(x1, y1), new Point(x2, y2), id);
         public void SendBlockLine(int layer, Point start, int x2, int y2, int id) => SendBlockLine(layer, start, new Point(x2, y2), id);
@@ -175,5 +183,12 @@ namespace SFGLib
         public void SendBlockLine(int layer, Point start, Point end, BlockId id) => SendBlockLine(layer, start, end, (int)id);
         public void SendBlockLine(LayerId layer, Point start, Point end, BlockId id) => SendBlockLine((int)layer, start, end, (int)id);
 
+        //public void SendBlockBuffer(params BaseMessage[] msgs)
+        //{
+        //    foreach (var msg in msgs)
+        //    {
+        //        //switch
+        //    }
+        //}
     }
 }
