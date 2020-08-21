@@ -58,12 +58,14 @@ namespace example
             };
             con.Connect();
             Console.Write("egg");
-            Console.ReadLine();
-            Random rnd = new Random();
+            //Console.ReadLine();
+            //Random rnd = new Random();
             while (con.Connected)
             {
-                Thread.Sleep(200);
-                con.SendBlockLine(LayerId.Foreground, rnd.Next(-50, 100), rnd.Next(-50, 100), rnd.Next(-50, 100), rnd.Next(-50, 100), BlockId.Solid);
+                //Thread.Sleep(200);
+                Console.ReadLine();
+                con.SendBlockBuffer(new BlockSingleMessage(LayerId.Action, 7, 5, BlockId.Gun), new BlockLineMessage(LayerId.Foreground, 3, 8, 12, 8, BlockId.Solid));
+                //con.SendBlockLine(LayerId.Foreground, rnd.Next(-50, 100), rnd.Next(-50, 100), rnd.Next(-50, 100), rnd.Next(-50, 100), BlockId.Solid);
             }
         }
     }

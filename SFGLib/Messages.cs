@@ -46,9 +46,9 @@ namespace SFGLib
             return m;
         }
 
-        internal static BaseMessage ParseMessage(MessageEventArgs m)
+        internal static BaseMessage ParseMessage(MessageEventArgs m) => ParseMessage(m.Data);
+        internal static BaseMessage ParseMessage(string raw)
         {
-            var raw = m.Data;
             var json = JsonConvert.DeserializeObject<JObject>(raw);
             string packetId = json["packetId"].ToString();
 
@@ -68,6 +68,23 @@ namespace SFGLib
                 case MessageType.Movement: msg = CreateMessage<MovementMessage>(raw); break;
                 case MessageType.BlockSingle: msg = CreateMessage<BlockSingleMessage>(raw); break;
                 case MessageType.BlockLine: msg = CreateMessage<BlockLineMessage>(raw); break;
+                case MessageType.BlockBuffer:
+                    {
+                        var buf = CreateMessage<BlockBufferMessage>(raw);
+                        var obj = JsonConvert.DeserializeObject<JObject>(raw);
+                        var arr = obj["blocks"] as JArray;
+                        var count = arr.Count;
+                        BaseMessage[] msgs = new BaseMessage[count];
+                        for (int i = 0; i < count; i++)
+                        {
+                            var v = ParseMessage(arr[i].ToString());
+                            if (v.Type != MessageType.BlockSingle && v.Type != MessageType.BlockLine) throw new ArgumentException("blockbuffer msg contains invalid child");
+                            msgs[i] = v;
+                        }
+                        buf.Blocks = msgs;
+                        msg = buf;
+                        break;
+                    }
                 case MessageType.FireBullet: msg = CreateMessage<FireBulletMessage>(raw); break;
                 case MessageType.PickupGun: msg = CreateMessage<PickupGunMessage>(raw); break;
                 case MessageType.EquipGun: msg = CreateMessage<EquipGunMessage>(raw); break;
@@ -98,7 +115,7 @@ namespace SFGLib
         internal BaseMessage() { }
 
         public virtual MessageType Type { get; }
-        internal string packetId => MessageParser.EnumToPacketId(Type);
+        internal string packetId => Type != MessageType.Unknown ? MessageParser.EnumToPacketId(Type) : JsonConvert.DeserializeAnonymousType(Raw, new { packetId = default(string) }).packetId;
         public string Raw { get; internal set; }
     }
 
@@ -277,5 +294,32 @@ namespace SFGLib
         [JsonProperty("id")]
         public int Id { get; internal set; }
     }
+    public sealed class BlockBufferMessage : BaseMessage, IPlayerId
+    {
+        public BlockBufferMessage() { }
+        public BlockBufferMessage(params BaseMessage[] msgs)
+        {
+            JObject json = new JObject();
+            json.Add("packetId", MessageParser.EnumToPacketId(MessageType.BlockBuffer));
+            JArray arr = new JArray();
+            foreach (var msg in msgs)
+            {
+                switch (msg.Type)
+                {
+                    case MessageType.BlockSingle:
+                    case MessageType.BlockLine:
+                        arr.Add(JsonConvert.DeserializeObject(msg.Raw));
+                        break;
+                    default: throw new ArgumentException("message needs to be either blocksingle or blockline");
+                }
+            }
+            Blocks = msgs;
+            json.Add("blocks", arr);
+            Raw = json.ToString();
+        }
+        public override MessageType Type => MessageType.BlockBuffer;
 
+        public int PlayerId { get; internal set; }
+        public BaseMessage[] Blocks { get; internal set; }
+    }
 }
